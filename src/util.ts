@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { HttpResponse } from 'uWebSockets.js';
+import { HttpRequest, HttpResponse } from 'uWebSockets.js';
 
 const readFormencodedData = (
   res: HttpResponse,
@@ -38,4 +38,20 @@ const verifyCaptcha = (token: string) =>
     })
     .then((res) => JSON.parse(res.data));
 
-export { readFormencodedData, verifyCaptcha };
+function setCorsHeaders(request: HttpRequest, response: HttpResponse) {
+  if (request.getHeader('origin').endsWith('ezrahuang.com')) {
+    response.writeHeader('Access-Control-Allow-Origin', 'ezrahuang.com');
+    response.writeHeader(
+      'Access-Control-Allow-Methods',
+      'GET, POST, PUT, DELETE, OPTIONS',
+    );
+    response.writeHeader(
+      'Access-Control-Allow-Headers',
+      'origin, content-type, accept, x-requested-with',
+    );
+    response.writeHeader('Access-Control-Max-Age', '3600');
+  }
+  response.onAborted(() => {});
+}
+
+export { readFormencodedData, verifyCaptcha, setCorsHeaders };

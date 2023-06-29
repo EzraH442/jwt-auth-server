@@ -1,7 +1,7 @@
 import { HttpRequest, HttpResponse } from 'uWebSockets.js';
 import { readFileSync } from 'node:fs';
 import jwt, { JsonWebTokenError, JwtPayload } from 'jsonwebtoken';
-import { readFormencodedData, verifyCaptcha } from './util';
+import { readFormencodedData, setCorsHeaders, verifyCaptcha } from './util';
 import getToken from './auth_handler';
 
 interface User {
@@ -18,6 +18,8 @@ interface Jwt extends JwtPayload {
 }
 
 const authHandler = (res: HttpResponse, req: HttpRequest) => {
+  setCorsHeaders(req, res);
+
   res.aborted = false;
   if (req.getHeader('Content-Type') !== 'x-ww-urlformencoded') {
     res.writeStatus('400 Bad Request');
@@ -90,6 +92,8 @@ const authHandler = (res: HttpResponse, req: HttpRequest) => {
 };
 
 const verifyHandler = (res: HttpResponse, req: HttpRequest) => {
+  setCorsHeaders(req, res);
+  
   res.aborted = false;
   if (req.getHeader('Content-Type') !== 'x-ww-urlformencoded') {
     res.writeStatus('400 Bad Request');
