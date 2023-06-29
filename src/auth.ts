@@ -1,7 +1,7 @@
 import { HttpRequest, HttpResponse } from 'uWebSockets.js';
 import { readFileSync } from 'node:fs';
 import jwt, { JsonWebTokenError, JwtPayload } from 'jsonwebtoken';
-import readFormencodedData from './util';
+import { readFormencodedData, verifyCaptcha } from './util';
 import getToken from './auth_handler';
 
 interface User {
@@ -33,12 +33,27 @@ const authHandler = (res: HttpResponse, req: HttpRequest) => {
     (data) => {
       const email = data.get('email');
       const password = data.get('password');
+      const captcha = data.get('captcha');
 
       // if email/password combo is invalid
       console.log(`got request email: ${email} password: ${password}`);
 
-      if (!email || !password) {
+      if (!email || !password || !captcha) {
         res.end(JSON.stringify({ success: false, err: 'Invalid' }));
+        return;
+      }
+
+      let captchaSucess = false;
+
+      verifyCaptcha(captcha).then((captchaResponse) => {
+        if (!captchaResponse.success) {
+          return;
+        }
+        captchaSucess = true;
+      });
+
+      if (!captchaSucess) {
+        res.end(JSON.stringify({ success: false, err: 'Captcha error' }));
         return;
       }
 
@@ -46,16 +61,17 @@ const authHandler = (res: HttpResponse, req: HttpRequest) => {
         readFileSync('./users.json', 'utf-8'),
       ) as FileData;
 
-      let isValid = false;
+      let validUser = false;
+
       for (let i = 0; i < fileData.users.length; i++) {
         const user = fileData.users[i];
         if (user.email === email && user.password === password) {
-          isValid = true;
+          validUser = true;
           break;
         }
       }
 
-      if (!isValid) {
+      if (!validUser) {
         res.end(JSON.stringify({ success: false, err: 'Invalid' }));
       } else {
         try {

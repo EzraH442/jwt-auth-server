@@ -7,7 +7,13 @@ const port = 3001;
 const app = uws.App({});
 
 if (!process.env.SECRET_KEY) {
-  console.warn("missing secret key");
+  console.warn("missing jwt secret key");
+}
+if (!process.env.HC_SECRET) {
+  console.warn("missing hcaptcha secret");
+}
+if (!process.env.HC_SITEKEY) {
+  console.warn("missing hcaptcha sitekey");
 }
 
 app.listen(port, (token) => {

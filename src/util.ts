@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { HttpResponse } from 'uWebSockets.js';
 
 const readFormencodedData = (
@@ -28,4 +29,13 @@ const readFormencodedData = (
   res.onAborted(onAborted);
 };
 
-export default readFormencodedData;
+const verifyCaptcha = (token: string) =>
+  axios
+    .post('https://hcaptcha.com/siteverify', {
+      secret: process.env.HC_SECRET,
+      response: token,
+      sitekey: process.env.HC_SITEKEY!,
+    })
+    .then((res) => JSON.parse(res.data));
+
+export { readFormencodedData, verifyCaptcha };
