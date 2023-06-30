@@ -39,8 +39,10 @@ const verifyCaptcha = (token: string) =>
     .then((res) => JSON.parse(res.data));
 
 function setCorsHeaders(request: HttpRequest, response: HttpResponse) {
-  if (request.getHeader('origin').endsWith('ezrahuang.com')) {
-    response.writeHeader('Access-Control-Allow-Origin', 'ezrahuang.com');
+  const origin = request.getHeader('origin');
+
+  if (origin.endsWith('ezrahuang.com')) {
+    response.writeHeader('Access-Control-Allow-Origin', `http://${origin}`);
     response.writeHeader(
       'Access-Control-Allow-Methods',
       'GET, POST, PUT, DELETE, OPTIONS',
