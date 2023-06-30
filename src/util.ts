@@ -29,17 +29,22 @@ const readFormencodedData = (
   res.onAborted(onAborted);
 };
 
-const verifyCaptcha = (token: string) =>
-  axios
-    .post('https://hcaptcha.com/siteverify', {
-      secret: process.env.HC_SECRET,
-      response: token,
-      sitekey: process.env.HC_SITEKEY!,
-    })
-    .then((res) => JSON.parse(res.data));
+const verifyCaptcha = (token: string) => {
+  const params = new URLSearchParams({
+    response: token,
+    secret: process.env.HC_SECRET!,
+    sitekey: process.env.HC_SITEKEY!,
+  });
+  
+  return axios
+    .post('https://hcaptcha.com/siteverify', params)
+    .then((res) => res.data);
+}
 
 function setCorsHeaders(request: HttpRequest, response: HttpResponse) {
   const origin = request.getHeader('origin');
+
+  console.log(`got request from origin ${origin}`);
 
   if (origin.endsWith('ezrahuang.com')) {
     response.writeHeader('Access-Control-Allow-Origin', `http://${origin}`);

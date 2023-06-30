@@ -32,13 +32,13 @@ const authHandler = (res: HttpResponse, req: HttpRequest) => {
 
   readFormencodedData(
     res,
-    (data) => {
+    async (data) => {
       const email = data.get('email');
       const password = data.get('password');
       const captcha = data.get('captcha');
 
       // if email/password combo is invalid
-      console.log(`got request email: ${email} password: ${password}`);
+      console.log(`got request email: ${email} password: ${password} token: ${captcha}`);
 
       if (!email || !password || !captcha) {
         res.end(JSON.stringify({ success: false, err: 'Invalid' }));
@@ -47,8 +47,9 @@ const authHandler = (res: HttpResponse, req: HttpRequest) => {
 
       let captchaSucess = false;
 
-      verifyCaptcha(captcha).then((captchaResponse) => {
-        if (!captchaResponse.success) {
+      await verifyCaptcha(captcha).then((captchaResponse) => {
+	console.log(JSON.stringify(captchaResponse, null, 2))
+        if (!(captchaResponse as any).success) {
           return;
         }
         captchaSucess = true;
@@ -67,7 +68,9 @@ const authHandler = (res: HttpResponse, req: HttpRequest) => {
 
       for (let i = 0; i < fileData.users.length; i++) {
         const user = fileData.users[i];
+	console.log(`checking email ${user.email}`)
         if (user.email === email && user.password === password) {
+          console.log(`found match`)
           validUser = true;
           break;
         }
