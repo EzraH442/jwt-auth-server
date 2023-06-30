@@ -19,7 +19,7 @@ interface Jwt extends JwtPayload {
 }
 
 const authHandler = (res: HttpResponse, req: HttpRequest) => {
-  setCorsHeaders(req, res);
+  // setCorsHeaders(req, res);
 
   res.aborted = false;
   if (req.getHeader('Content-Type') !== 'x-ww-urlformencoded') {
@@ -98,11 +98,11 @@ const authHandler = (res: HttpResponse, req: HttpRequest) => {
 };
 
 const verifyHandler = (res: HttpResponse, req: HttpRequest) => {
-  setCorsHeaders(req, res);
+  // setCorsHeaders(req, res);
 
   res.aborted = false;
   if (req.getHeader('Content-Type') !== 'x-ww-urlformencoded') {
-    res.writeStatus('400 Bad Request');
+    res.writeStatus('400 Bad Request').end({valid : false, error : ''})
   }
 
   res.onAborted(() => { res.aborted = true; });
@@ -115,8 +115,8 @@ const verifyHandler = (res: HttpResponse, req: HttpRequest) => {
         const token = data.get('token');
 
         if (!token) {
-          res.end(
-              JSON.stringify({valid : false, error : 'missing token'}));
+          res.writeStatus('400 Bad Request')
+          res.end(JSON.stringify({valid : false, error : 'missing token'}));
           return;
         }
 
@@ -125,19 +125,16 @@ const verifyHandler = (res: HttpResponse, req: HttpRequest) => {
             if (err!.name === 'TokenExpiredError') {
               res.writeStatus('200 OK')
               res.end(
-                  JSON.stringify(
-                      {valid : false, error : 'Session expired'}),
+                  JSON.stringify({valid : false, error : 'Session expired'}),
               );
             } else if (err!.name === 'JsonWebTokenError') {
               res.writeStatus('200 OK')
               res.end(
-                  JSON.stringify(
-                      {valid : false, error : 'Session expired'}),
+                  JSON.stringify({valid : false, error : 'Session expired'}),
               );
             } else {
               res.writeStatus('500 Internal Server Error')
-              res.end(
-                  JSON.stringify({valid : false, error : 'Unknown error'}));
+              res.end(JSON.stringify({valid : false, error : 'Unknown error'}));
               console.error(err);
             }
           } else {
