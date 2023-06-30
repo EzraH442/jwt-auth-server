@@ -1,8 +1,9 @@
-import { HttpRequest, HttpResponse } from 'uWebSockets.js';
-import { readFileSync } from 'node:fs';
-import jwt, { JsonWebTokenError, JwtPayload } from 'jsonwebtoken';
-import { readFormencodedData, setCorsHeaders, verifyCaptcha } from './util';
+import jwt, {JsonWebTokenError, JwtPayload} from 'jsonwebtoken';
+import {readFileSync} from 'node:fs';
+import {HttpRequest, HttpResponse} from 'uWebSockets.js';
+
 import getToken from './auth_handler';
+import {readFormencodedData, setCorsHeaders, verifyCaptcha} from './util';
 
 interface User {
   email: string;
@@ -25,122 +26,128 @@ const authHandler = (res: HttpResponse, req: HttpRequest) => {
     res.writeStatus('400 Bad Request');
   }
 
-  res.onAborted(() => {
-    res.aborted = true;
-  });
-  if (res.aborted) return;
+  res.onAborted(() => { res.aborted = true; });
+  if (res.aborted)
+    return;
 
   readFormencodedData(
-    res,
-    async (data) => {
-      const email = data.get('email');
-      const password = data.get('password');
-      const captcha = data.get('captcha');
+      res,
+      async (data) => {
+        const email = data.get('email');
+        const password = data.get('password');
+        const captcha = data.get('captcha');
 
-      // if email/password combo is invalid
-      console.log(`got request email: ${email} password: ${password} token: ${captcha}`);
+        // if email/password combo is invalid
+        console.log(`got request email: ${email} password: ${password} token: ${
+            captcha}`);
 
-      if (!email || !password || !captcha) {
-        res.end(JSON.stringify({ success: false, err: 'Invalid' }));
-        return;
-      }
-
-      let captchaSucess = false;
-
-      await verifyCaptcha(captcha).then((captchaResponse) => {
-	console.log(JSON.stringify(captchaResponse, null, 2))
-        if (!(captchaResponse as any).success) {
+        if (!email || !password || !captcha) {
+          res.end(JSON.stringify({success : false, err : 'Invalid'}));
           return;
         }
-        captchaSucess = true;
-      });
 
-      if (!captchaSucess) {
-        res.end(JSON.stringify({ success: false, err: 'Captcha error' }));
-        return;
-      }
+        let captchaSucess = false;
 
-      const fileData = JSON.parse(
-        readFileSync('./users.json', 'utf-8'),
-      ) as FileData;
+        await verifyCaptcha(captcha).then((captchaResponse) => {
+          console.log(JSON.stringify(captchaResponse, null, 2))
+          if (!(captchaResponse as any).success) {
+            return;
+          }
+          captchaSucess = true;
+        });
 
-      let validUser = false;
-
-      for (let i = 0; i < fileData.users.length; i++) {
-        const user = fileData.users[i];
-	console.log(`checking email ${user.email}`)
-        if (user.email === email && user.password === password) {
-          console.log(`found match`)
-          validUser = true;
-          break;
+        if (!captchaSucess) {
+          res.writeStatus('200 OK')
+          res.end(JSON.stringify({success : false, err : 'Captcha error'}));
+          return;
         }
-      }
 
-      if (!validUser) {
-        res.end(JSON.stringify({ success: false, err: 'Invalid' }));
-      } else {
-        try {
-          const token = getToken(email);
-          res.end(JSON.stringify({ success: true, token }));
-        } catch (err) {
-          console.error(err);
-          res.end(JSON.stringify({ success: false, err: 'Unknown error' }));
+        const fileData = JSON.parse(
+                             readFileSync('./users.json', 'utf-8'),
+                             ) as FileData;
+
+        let validUser = false;
+
+        for (let i = 0; i < fileData.users.length; i++) {
+          const user = fileData.users[i];
+          console.log(`checking email ${user.email}`)
+          if (user.email === email && user.password === password) {
+            console.log(`found match`)
+            validUser = true;
+            break;
+          }
         }
-      }
-    },
-    () => {
-      res.aborted = true;
-    },
+
+        if (!validUser) {
+          res.writeStatus('200 OK')
+          res.end(JSON.stringify({success : false, err : 'Invalid'}));
+        } else {
+          try {
+            const token = getToken(email);
+            res.writeStatus('200 OK')
+            res.end(JSON.stringify({success : true, token}));
+          } catch (err) {
+            console.error(err);
+            res.writeStatus('500 Internal Server Error')
+            res.end(JSON.stringify({success : false, err : 'Unknown error'}));
+          }
+        }
+      },
+      () => { res.aborted = true; },
   );
 };
 
 const verifyHandler = (res: HttpResponse, req: HttpRequest) => {
   setCorsHeaders(req, res);
-  
+
   res.aborted = false;
   if (req.getHeader('Content-Type') !== 'x-ww-urlformencoded') {
     res.writeStatus('400 Bad Request');
   }
 
-  res.onAborted(() => {
-    res.aborted = true;
-  });
-  if (res.aborted) return;
+  res.onAborted(() => { res.aborted = true; });
+  if (res.aborted)
+    return;
 
   readFormencodedData(
-    res,
-    (data) => {
-      const token = data.get('token');
+      res,
+      (data) => {
+        const token = data.get('token');
 
-      if (!token) {
-        res.end(JSON.stringify({ valid: false, errors: ['missing token'] }));
-        return;
-      }
-
-      jwt.verify(token, process.env.SECRET_KEY!, (err, decoded) => {
-        if (err as JsonWebTokenError) {
-          if (err!.name === 'TokenExpiredError') {
-            res.end(
-              JSON.stringify({ valid: false, error: ['Session expired'] }),
-            );
-          } else if (err!.name === 'JsonWebTokenError') {
-            res.end(
-              JSON.stringify({ valid: false, error: ['Session expired'] }),
-            );
-          } else {
-            res.end(JSON.stringify({ valid: false, error: ['Unknown error'] }));
-            console.error(err);
-          }
-        } else {
-          console.log(`verified token for ${(decoded as Jwt).email}`);
-          res.end(JSON.stringify({ valid: true }));
+        if (!token) {
+          res.end(
+              JSON.stringify({valid : false, errors : [ 'missing token' ]}));
+          return;
         }
-      });
-    },
-    () => {
-      res.aborted = true;
-    },
+
+        jwt.verify(token, process.env.SECRET_KEY!, (err, decoded) => {
+          if (err as JsonWebTokenError) {
+            if (err!.name === 'TokenExpiredError') {
+              res.writeStatus('200 OK')
+              res.end(
+                  JSON.stringify(
+                      {valid : false, error : [ 'Session expired' ]}),
+              );
+            } else if (err!.name === 'JsonWebTokenError') {
+              res.writeStatus('200 OK')
+              res.end(
+                  JSON.stringify(
+                      {valid : false, error : [ 'Session expired' ]}),
+              );
+            } else {
+              res.writeStatus('500 Internal Server Error')
+              res.end(
+                  JSON.stringify({valid : false, error : [ 'Unknown error' ]}));
+              console.error(err);
+            }
+          } else {
+            console.log(`verified token for ${(decoded as Jwt).email}`);
+            res.end(JSON.stringify({valid : true}));
+          }
+        });
+      },
+      () => { res.aborted = true; },
   );
 };
 
-export { authHandler, verifyHandler };
+export {authHandler, verifyHandler};
