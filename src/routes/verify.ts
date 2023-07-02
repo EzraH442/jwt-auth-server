@@ -1,6 +1,6 @@
 import { HttpRequest, HttpResponse } from 'uWebSockets.js';
 import jwt, { JsonWebTokenError, JwtPayload } from 'jsonwebtoken';
-import { readFormencodedData } from '../util';
+import { readFormencodedData, setCorsHeaders } from '../util';
 import VerifyResponse from '../responses/verify_response';
 
 interface Jwt extends JwtPayload {
@@ -23,8 +23,13 @@ const verifyHandler = async (res: HttpResponse, req: HttpRequest) => {
   const token = data.get('token');
 
   if (!token) {
-    const response = new VerifyResponse('400 Bad Request', false, []);
-    response.process(req, res);
+    console.log('missing otken');
+    // const response = new VerifyResponse('400 Bad Request', false, []);
+    // response.process(req, res);
+    res.writeStatus('400 bad request');
+    setCorsHeaders(req, res);
+    res.end(JSON.stringify({ valid: false }));
+    res.handled = true;
     return;
   }
 
@@ -50,7 +55,7 @@ const verifyHandler = async (res: HttpResponse, req: HttpRequest) => {
         console.error(err);
       }
     } else {
-      const response = new VerifyResponse('200 OK', false, []);
+      const response = new VerifyResponse('200 OK', true, []);
       response.process(req, res);
       console.log(`verified token for ${(decoded as Jwt).email}`);
     }
