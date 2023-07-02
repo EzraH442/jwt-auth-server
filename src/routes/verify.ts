@@ -12,7 +12,7 @@ const verifyHandler = async (res: HttpResponse, req: HttpRequest) => {
     res.aborted = true;
   });
 
-  if (req.getHeader('content-type') !== 'application/x-ww-urlformencoded') {
+  if (req.getHeader('content-type') !== 'application/x-www-form-urlencoded') {
     const response = new VerifyResponse('400 Bad Request', false, []);
     response.process(req, res);
     return;
