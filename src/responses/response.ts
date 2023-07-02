@@ -18,7 +18,7 @@ abstract class Response {
 
     res.cork(() => {
       res.writeStatus(this.status);
-      setCorsHeaders(req, res);
+      // setCorsHeaders(req, res);
       res.end(this.buildBody());
       res.handled = true;
     });
