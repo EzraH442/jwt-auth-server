@@ -116,7 +116,7 @@ const verifyHandler = (res: HttpResponse, req: HttpRequest) => {
 
         if (!token) {
           res.end(
-              JSON.stringify({valid : false, errors : [ 'missing token' ]}));
+              JSON.stringify({valid : false, error : 'missing token'}));
           return;
         }
 
@@ -126,22 +126,23 @@ const verifyHandler = (res: HttpResponse, req: HttpRequest) => {
               res.writeStatus('200 OK')
               res.end(
                   JSON.stringify(
-                      {valid : false, error : [ 'Session expired' ]}),
+                      {valid : false, error : 'Session expired'}),
               );
             } else if (err!.name === 'JsonWebTokenError') {
               res.writeStatus('200 OK')
               res.end(
                   JSON.stringify(
-                      {valid : false, error : [ 'Session expired' ]}),
+                      {valid : false, error : 'Session expired'}),
               );
             } else {
               res.writeStatus('500 Internal Server Error')
               res.end(
-                  JSON.stringify({valid : false, error : [ 'Unknown error' ]}));
+                  JSON.stringify({valid : false, error : 'Unknown error'}));
               console.error(err);
             }
           } else {
             console.log(`verified token for ${(decoded as Jwt).email}`);
+            res.writeStatus('200 OK');
             res.end(JSON.stringify({valid : true}));
           }
         });
