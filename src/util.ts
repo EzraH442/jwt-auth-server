@@ -1,33 +1,28 @@
 import axios from 'axios';
 import { HttpRequest, HttpResponse } from 'uWebSockets.js';
 
-const readFormencodedData = (
-  res: HttpResponse,
-  cb: (data: URLSearchParams) => void,
-  onAborted: VoidFunction,
-) => {
-  let buf: Buffer;
-  res.onData((data, isLast) => {
-    const chunk = Buffer.from(data);
-    if (isLast) {
-      if (chunk) {
+const readFormencodedData = (res: HttpResponse) =>
+  new Promise<URLSearchParams>((resolve) => {
+    let buf: Buffer;
+    if (res.aborted) resolve(new URLSearchParams());
+    res.onData((data, isLast) => {
+      const chunk = Buffer.from(data);
+      if (!isLast) {
         if (buf) Buffer.concat([buf, chunk]);
         else {
           buf = Buffer.concat([chunk]);
         }
+      } else {
+        if (chunk) {
+          if (buf) Buffer.concat([buf, chunk]);
+          else {
+            buf = Buffer.concat([chunk]);
+          }
+        }
+        resolve(new URLSearchParams(buf.toString()));
       }
-      const querystring = new URLSearchParams(buf.toString());
-      cb(querystring);
-    }
-
-    if (buf) Buffer.concat([buf, chunk]);
-    else {
-      buf = Buffer.concat([chunk]);
-    }
+    });
   });
-
-  res.onAborted(onAborted);
-};
 
 const verifyCaptcha = (token: string) => {
   const params = new URLSearchParams({
@@ -35,11 +30,11 @@ const verifyCaptcha = (token: string) => {
     secret: process.env.HC_SECRET!,
     sitekey: process.env.HC_SITEKEY!,
   });
-  
+
   return axios
     .post('https://hcaptcha.com/siteverify', params)
     .then((res) => res.data);
-}
+};
 
 function setCorsHeaders(request: HttpRequest, response: HttpResponse) {
   const origin = request.getHeader('origin');
@@ -58,7 +53,6 @@ function setCorsHeaders(request: HttpRequest, response: HttpResponse) {
     );
     response.writeHeader('Access-Control-Max-Age', '3600');
   }
-  response.onAborted(() => {});
 }
 
 export { readFormencodedData, verifyCaptcha, setCorsHeaders };
