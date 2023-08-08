@@ -8,6 +8,7 @@ interface Jwt extends JwtPayload {
 }
 
 const verifyHandler = async (res: HttpResponse, req: HttpRequest) => {
+  setCorsHeaders(req, res);
   res.onAborted(() => {
     res.aborted = true;
   });
@@ -23,13 +24,9 @@ const verifyHandler = async (res: HttpResponse, req: HttpRequest) => {
   const token = data.get('token');
 
   if (!token) {
-    console.log('missing otken');
-    // const response = new VerifyResponse('400 Bad Request', false, []);
-    // response.process(req, res);
-    res.writeStatus('400 bad request');
-    setCorsHeaders(req, res);
-    res.end(JSON.stringify({ valid: false }));
-    res.handled = true;
+    console.log('missing token');
+    const response = new VerifyResponse('400 Bad Request', false, []);
+    response.process(req, res);
     return;
   }
 

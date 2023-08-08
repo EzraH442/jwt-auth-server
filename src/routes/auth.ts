@@ -1,6 +1,6 @@
 import { HttpRequest, HttpResponse } from 'uWebSockets.js';
 import { readFileSync } from 'node:fs';
-import { readFormencodedData, verifyCaptcha } from '../util';
+import { readFormencodedData, setCorsHeaders, verifyCaptcha } from '../util';
 import getToken from '../auth_handler';
 import LoginResponse from '../responses/login_response';
 
@@ -14,6 +14,7 @@ interface FileData {
 }
 
 const authHandler = async (res: HttpResponse, req: HttpRequest) => {
+  setCorsHeaders(req, res)
   res.onAborted(() => {
     res.aborted = true;
   });

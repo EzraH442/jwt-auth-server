@@ -42,7 +42,7 @@ function setCorsHeaders(request: HttpRequest, response: HttpResponse) {
   console.log(`got request from origin ${origin}`);
 
   if (origin.endsWith('ezrahuang.com')) {
-    response.writeHeader('Access-Control-Allow-Origin', `http://${origin}`);
+    response.writeHeader('Access-Control-Allow-Origin', origin);
     response.writeHeader(
       'Access-Control-Allow-Methods',
       'GET, POST, PUT, DELETE, OPTIONS',
